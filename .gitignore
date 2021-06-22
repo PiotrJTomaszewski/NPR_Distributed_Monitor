@@ -1,0 +1,8 @@
+*.class
+target
+launch.json
+settings.json
+.project
+.classpath
+org.eclipse.*
+*.code-workspace
