@@ -2,8 +2,11 @@ package pl.pjtom.distributed_monitor.monitor;
 
 import java.io.Serializable;
 import java.util.HashMap;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 import pl.pjtom.distributed_monitor.CondVar;
+import pl.pjtom.distributed_monitor.Debug;
 import pl.pjtom.distributed_monitor.Token;
 import pl.pjtom.distributed_monitor.node.MyNode;
 import pl.pjtom.distributed_monitor.node.OtherNode;
@@ -22,6 +25,7 @@ public class MonitorCommon {
     private HashMap<String, Integer> requestNumber = new HashMap<>();
     private boolean hasToken = false;
     private Token token;
+    private Lock lock = new ReentrantLock();
 
     public MonitorCommon(Serializable sharedObject, int condVarCount) {
         this.sharedObject = sharedObject;
@@ -75,27 +79,32 @@ public class MonitorCommon {
     public Integer incrementMyRequestNumber() {
         Integer currentVal = requestNumber.get(myIdentifier);
         requestNumber.replace(myIdentifier, currentVal+1);
+        debugPrintData();
         return currentVal+1;
     }
 
     public void updateMyRequestNumberInToken() {
         token.setLastRequestNumber(myIdentifier, requestNumber.get(myIdentifier));
+        debugPrintData();
     }
 
     public void updateRequestNumber(String identifier, Integer receivedValue) {
         Integer current = requestNumber.get(identifier);
         requestNumber.replace(identifier, Math.max(receivedValue, current));
+        debugPrintData();
     }
 
     public boolean checkRequestNumberWithToken(String identifier) {
         return requestNumber.get(identifier) == (token.getLastRequestNumber(identifier) + 1);
     }
 
-    public void updateToken() {
+    public void updateTokenQueue() {
         token.updateQueue(requestNumber);
+        debugPrintData();
     }
 
     public String tokenQueuePop() {
+        debugPrintData();
         return token.queuePop();
     }
 
@@ -113,6 +122,22 @@ public class MonitorCommon {
 
     public Token getToken() {
         return token;
+    }
+
+    public void debugPrintData() {
+        Debug.printf(Debug.DebugLevel.LEVEL_HIGHEST, Debug.Color.YELLOW, "requests");
+        for (String identifier: requestNumber.keySet()) {
+            if (hasToken) {
+                Debug.printf(Debug.DebugLevel.LEVEL_HIGHEST, Debug.Color.YELLOW, "%s -> RNi: %d LNi: %d", identifier, requestNumber.get(identifier), token.getLastRequestNumber(identifier));
+                token.debugPrintQueue();
+            } else {
+                Debug.printf(Debug.DebugLevel.LEVEL_HIGHEST, Debug.Color.YELLOW, "%s -> RNi: %d", identifier, requestNumber.get(identifier));
+            }
+        }
+    }
+
+    public Lock getLock() {
+        return lock;
     }
 
 }

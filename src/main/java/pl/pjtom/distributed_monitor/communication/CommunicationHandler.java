@@ -55,4 +55,5 @@ public class CommunicationHandler {
     public void broadcast(MessageType msgType, Serializable payload) {
         commCommon.broadcast(new Message(msgType, commCommon.getMyIdentifier(), payload));
     }
+
 }

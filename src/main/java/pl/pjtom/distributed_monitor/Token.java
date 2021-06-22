@@ -9,7 +9,7 @@ import pl.pjtom.distributed_monitor.node.OtherNode;
 
 public class Token implements Serializable {
     private HashMap<String, Integer> lastRequestNumber = new HashMap<>();
-    private LinkedList<String> queue = new LinkedList<>(); 
+    private LinkedList<String> queue = new LinkedList<>();
 
     public Token(MyNode myNode, HashMap<String, OtherNode> otherNodes) {
         lastRequestNumber.put(myNode.getIdentifier(), 0);
@@ -45,6 +45,12 @@ public class Token implements Serializable {
             return queue.pop();
         }
         return null;
+    }
+
+    public void debugPrintQueue() {
+        for (int i=0; i<queue.size(); i++) {
+            Debug.printf(Debug.DebugLevel.LEVEL_HIGHEST, Debug.Color.YELLOW, "In queue -> %s", queue.get(i));
+        }
     }
 
 }

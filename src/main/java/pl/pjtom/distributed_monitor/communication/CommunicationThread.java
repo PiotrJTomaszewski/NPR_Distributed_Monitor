@@ -50,6 +50,7 @@ public class CommunicationThread implements Runnable {
             case CS_REQUEST:
                 condVar = monCommon.getCSCondVar();
                 condVar.lock();
+                monCommon.getLock().lock();
                 monCommon.updateRequestNumber(msg.getSenderId(), (Integer)msg.getPayload());
                 Debug.printf(DebugLevel.LEVEL_HIGHEST, Debug.Color.GREEN, "Received CS_REQUEST from %s RNi: %d", msg.getSenderId(), (Integer)msg.getPayload());
                 if (monCommon.getHasToken() && monCommon.getMonitorState() != MonitorState.IN_CS) {
@@ -57,17 +58,23 @@ public class CommunicationThread implements Runnable {
                         Debug.printf(DebugLevel.LEVEL_HIGHEST, Debug.Color.GREEN, "Received CS_REQUEST from %s I have a token and don't need it so sending to him", msg.getSenderId());
                         commCommon.send(new Message(MessageType.TOKEN, commCommon.getMyIdentifier(), monCommon.getToken()), msg.getSenderId());
                         monCommon.setHasToken(false);
+                    } else {
+                        Debug.printf(DebugLevel.LEVEL_HIGHEST, Debug.Color.GREEN, "Received CS_REQUEST from %s It's an old request", msg.getSenderId());
+                        
                     }
                 }
+                monCommon.getLock().unlock();
                 condVar.unlock();
                 break;
             case TOKEN:
                 condVar = monCommon.getCSCondVar();
                 condVar.lock();
+                monCommon.getLock().lock();
                 monCommon.setToken((Token)msg.getPayload());
                 monCommon.setHasToken(true);
                 condVar.incrementCurrentVal();
                 condVar.signalIfReady();
+                monCommon.getLock().unlock();
                 condVar.unlock();
                 break;
             case SIGNAL:

@@ -19,6 +19,7 @@ public class Debug {
     }
 
     private static synchronized void printf_(PrintStream stream, Color color, String format, Object... args) {
+        format = java.time.LocalTime.now().toString() + "\t" + format;
         if (!format.endsWith("\n")) {
             format += "\n";
         }
