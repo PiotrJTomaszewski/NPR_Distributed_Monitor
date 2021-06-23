@@ -3,45 +3,38 @@ package pl.pjtom.producer_consumer_demo;
 import java.io.Serializable;
 import java.nio.BufferOverflowException;
 import java.nio.BufferUnderflowException;
+import java.util.ArrayDeque;
+import java.util.Deque;
 
 public class Buffer implements Serializable {
-    final int MAX_SIZE = 10;
-    int[] buf;
-    int writeIndex = 0;
-    int readIndex = 0;
-    int currentSize = 0;
+    private Deque<Integer> data = new ArrayDeque<>();
+    private final int MAX_SIZE;
 
-    public Buffer() {
-        buf = new int[MAX_SIZE];
+    public Buffer(int MAX_SIZE) {
+        this.MAX_SIZE = MAX_SIZE;
     }
 
-    public void put(int value) {
-        if (currentSize < MAX_SIZE) {
-            buf[writeIndex] = value;
-            writeIndex = (writeIndex + 1) % MAX_SIZE;
-            currentSize++;
+    public void put(Integer val) {
+        if (data.size() < MAX_SIZE) {
+            data.add(val);
         } else {
             throw new BufferOverflowException();
         }
     }
 
-    public int get() {
-        int val;
-        if (currentSize > 0) {
-            val = buf[readIndex];
-            readIndex = (readIndex + 1) % MAX_SIZE;
-            currentSize--;
-            return val;
+    public Integer get() {
+        if (data.size() > 0) {
+            return data.pop();
         } else {
             throw new BufferUnderflowException();
         }
     }
 
-    public boolean isFull() {
-        return currentSize == MAX_SIZE;
+    public boolean isEmpty() {
+        return data.size() == 0;
     }
 
-    public boolean isEmpty() {
-        return currentSize == 0;
+    public boolean isFull() {
+        return data.size() == MAX_SIZE;
     }
 }

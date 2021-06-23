@@ -1,15 +1,16 @@
 package pl.pjtom.distributed_monitor;
 
 import java.io.Serializable;
+import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.HashMap;
-import java.util.LinkedList;
 
 import pl.pjtom.distributed_monitor.node.MyNode;
 import pl.pjtom.distributed_monitor.node.OtherNode;
 
 public class Token implements Serializable {
     private HashMap<String, Integer> lastRequestNumber = new HashMap<>();
-    private LinkedList<String> queue = new LinkedList<>();
+    private Deque<String> queue = new ArrayDeque<>();
 
     public Token(MyNode myNode, HashMap<String, OtherNode> otherNodes) {
         lastRequestNumber.put(myNode.getIdentifier(), 0);
@@ -48,8 +49,9 @@ public class Token implements Serializable {
     }
 
     public void debugPrintQueue() {
-        for (int i=0; i<queue.size(); i++) {
-            Debug.printf(Debug.DebugLevel.LEVEL_HIGHEST, Debug.Color.YELLOW, "In queue -> %s", queue.get(i));
+        Object[] queueArray = queue.toArray();
+        for (int i=0; i<queueArray.length; i++) {
+            Debug.printf(Debug.DebugLevel.LEVEL_HIGHEST, Debug.Color.YELLOW, "In queue -> %s", queueArray[i]);
         }
     }
 

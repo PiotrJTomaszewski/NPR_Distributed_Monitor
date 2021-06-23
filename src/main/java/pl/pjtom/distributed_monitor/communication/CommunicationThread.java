@@ -82,7 +82,9 @@ public class CommunicationThread implements Runnable {
                 condVar.unlock();
                 break;
             case OBJECT_SYNC:
+                monCommon.getCSCondVar().lock();
                 monCommon.setSharedObject(msg.getPayload());
+                monCommon.getCSCondVar().unlock();
                 break;
             case CLOSE:
                 --closeMsgRecvNeeded;
