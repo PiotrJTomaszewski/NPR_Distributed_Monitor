@@ -33,7 +33,7 @@ public class ProducerConsumer {
 
     public class Producer {
         public Producer(DistributedMonitor distMon) {
-            for (int i = 0; i <= 20; i++) {
+            for (int i = 0; i < 100; i++) {
                 // Do some work
                 try {
                     Thread.sleep(rand.nextInt(300) + 100);
@@ -68,7 +68,7 @@ public class ProducerConsumer {
     public class Consumer {
         public Consumer(DistributedMonitor distMon) {
             int val;
-            for (int i = 0; i < 20; i++) {
+            for (int i = 0; i < 100; i++) {
                 distMon.distAcquire();
                 buf = (Buffer) distMon.getSharedObject();
                 while (buf.isEmpty()) {

@@ -23,11 +23,16 @@ public class CommunicationCommon {
     private MyNode myNode;
     private CondVar initialCondVar = new CondVar();
     private boolean canClose = false;
+    // Ohter node can receive our message with two separate channels. This sequence number is needed for providing FIFO.
+    private HashMap<String, Integer> msgSeqNo = new HashMap<>();
 
 
     CommunicationCommon(MonitorCommon monCom) {
         readMyIdentifier();
         readNodesFile(monCom);
+        for (OtherNode node: otherNodes.values()) {
+            msgSeqNo.put(node.getIdentifier(), 0);
+        }
     }
 
     void readMyIdentifier() {
@@ -129,10 +134,19 @@ public class CommunicationCommon {
     }
 
     public void send(Message msg, String recipientId) {
+        Integer newSeqNo = msgSeqNo.get(recipientId) + 1;
+        msgSeqNo.replace(recipientId, newSeqNo);
+        msg.setSeqNo(newSeqNo);
         getOtherNode(recipientId).getSendSocket().send(messageToBytes(msg));
     }
 
     public void broadcast(Message msg) {
+        Integer newSeqNo;
+        for (OtherNode node: otherNodes.values()) {
+            newSeqNo = msgSeqNo.get(node.getIdentifier()) + 1;
+            msgSeqNo.replace(node.getIdentifier(), newSeqNo);
+        }
+        msg.setSeqNoMap(msgSeqNo);
         myNode.getBroadcastSendSocket().send(messageToBytes(msg));
     }
 

@@ -1,5 +1,9 @@
 package pl.pjtom.distributed_monitor.communication;
 
+import java.util.HashMap;
+
+import javax.print.attribute.standard.MediaSize.Other;
+
 import org.zeromq.ZMQ;
 
 import pl.pjtom.distributed_monitor.CondVar;
@@ -15,6 +19,8 @@ public class CommunicationThread implements Runnable {
     private MonitorCommon monCommon;
     private ZMQ.Poller poller;
     private int closeMsgRecvNeeded;
+    private HashMap<String, MessageQueue> messageQueues = new HashMap<>();
+    private HashMap<String, Integer> nextToDeliver = new HashMap<>();
 
     public CommunicationThread(CommunicationCommon commCommon, MonitorCommon monCommon) {
         this.commCommon = commCommon;
@@ -25,10 +31,12 @@ public class CommunicationThread implements Runnable {
         poller.register(commCommon.getMyNode().getRecvSocket(), ZMQ.Poller.POLLIN);
         for (OtherNode node : commCommon.getOtherNodesCollection()) {
             poller.register(node.getBroadcastRecvSocket(), ZMQ.Poller.POLLIN);
+            messageQueues.put(node.getIdentifier(), new MessageQueue(commCommon.getMyIdentifier()));
+            nextToDeliver.put(node.getIdentifier(), 1);
         }
     }
 
-    private void handleOuterMessage(Message msg) {
+    private void deliverMessage(Message msg) {
         CondVar condVar;
         switch (msg.getMessageType()) {
             case INIT:
@@ -97,23 +105,44 @@ public class CommunicationThread implements Runnable {
 
     @Override
     public void run() {
-        Message msg;
+        Message msg, msgToDeliver;
+        Integer nextSeqNo;
 
         while (!commCommon.getCanClose() || closeMsgRecvNeeded > 0) {
             poller.poll(1000);
             if (poller.pollin(0)) {
                 msg = commCommon.bytesToMessage(poller.getSocket(0).recv(ZMQ.DONTWAIT));
+                MessageQueue senderQueue = messageQueues.get(msg.getSenderId());
                 Debug.printf(DebugLevel.LEVEL_MORE, Debug.Color.BLUE, "Received from: %s, message type: %s\n",
                         msg.getSenderId(), msg.getMessageType().toString());
-                handleOuterMessage(msg);
+                senderQueue.add(msg);
+                // Maintaining FIFO order on multiple sockets
+                msgToDeliver = senderQueue.peek();
+                nextSeqNo = nextToDeliver.get(msg.getSenderId());
+                while (msgToDeliver != null && msgToDeliver.getSeqNo(commCommon.getMyIdentifier()).equals(nextSeqNo)) {
+                    nextSeqNo++;
+                    nextToDeliver.replace(msg.getSenderId(), nextSeqNo);
+                    deliverMessage(senderQueue.pop());
+                    msgToDeliver = senderQueue.peek();
+                }
             }
             for (int i = 1; i < poller.getSize(); i++) {
                 if (poller.pollin(i)) {
                     msg = commCommon.bytesToMessage(poller.getSocket(i).recv(ZMQ.DONTWAIT));
+                    MessageQueue senderQueue = messageQueues.get(msg.getSenderId());
                     Debug.printf(DebugLevel.LEVEL_MORE, Debug.Color.BLUE,
                             "Received as broadcast from: %s, message type: %s\n", msg.getSenderId(),
                             msg.getMessageType().toString());
-                    handleOuterMessage(msg);
+                    senderQueue.add(msg);
+                    // Maintaining FIFO order on multiple sockets
+                    msgToDeliver = senderQueue.peek();
+                    nextSeqNo = nextToDeliver.get(msg.getSenderId());
+                    while (msgToDeliver != null && msgToDeliver.getSeqNo(commCommon.getMyIdentifier()).equals(nextSeqNo)) {
+                        nextSeqNo++;
+                        nextToDeliver.replace(msg.getSenderId(), nextSeqNo);
+                        deliverMessage(senderQueue.pop());
+                        msgToDeliver = senderQueue.peek();
+                    }
                 }
             }
         }
