@@ -1,0 +1,5 @@
+#Identifier,Address,ListenOnAddress,DirectListenPort,BroadcastPort
+Jeden,127.0.0.1,*,2222,2223
+Dwa,127.0.0.1,*,3333,3334
+Trzy,127.0.0.1,*,4444,4445
+Cztery,127.0.0.1,*,5555,5556

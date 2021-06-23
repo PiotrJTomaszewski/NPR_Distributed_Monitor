@@ -17,7 +17,7 @@ public class ProducerConsumer {
     private final int ITEM_OUT = 1;
     private Random rand = new Random();
     private FileWriter writer;
-    private volatile Buffer buf;
+    private Buffer buf;
 
     private void initWriter(String filename) {
         File file = new File(filename);
