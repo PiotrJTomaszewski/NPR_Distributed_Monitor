@@ -31,7 +31,7 @@ public class ProducerConsumer {
     public class Producer {
         public Producer(DistributedMonitor distMon) {
             Buffer buf;
-            for (int i = 0; i < 100; i++) {
+            for (int i = 0; i <= 100; i++) {
                 // Do some work
                 try {
                     Thread.sleep(rand.nextInt(300) + 100);

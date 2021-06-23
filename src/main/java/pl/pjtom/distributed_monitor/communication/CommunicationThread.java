@@ -14,21 +14,18 @@ public class CommunicationThread implements Runnable {
     private CommunicationCommon commCommon;
     private MonitorCommon monCommon;
     private ZMQ.Poller poller;
-    private int closeMsgReceived = 0;
+    private int closeMsgRecvNeeded;
 
     public CommunicationThread(CommunicationCommon commCommon, MonitorCommon monCommon) {
         this.commCommon = commCommon;
         this.monCommon = monCommon;
+        this.closeMsgRecvNeeded = commCommon.getOhterNodesCount();
 
         poller = commCommon.getContext().createPoller(commCommon.getOhterNodesCount() + 1);
         poller.register(commCommon.getMyNode().getRecvSocket(), ZMQ.Poller.POLLIN);
         for (OtherNode node : commCommon.getOtherNodesCollection()) {
             poller.register(node.getBroadcastRecvSocket(), ZMQ.Poller.POLLIN);
         }
-    }
-
-    private void close() {
-
     }
 
     private void handleOuterMessage(Message msg) {
@@ -87,6 +84,10 @@ public class CommunicationThread implements Runnable {
             case OBJECT_SYNC:
                 monCommon.setSharedObject(msg.getPayload());
                 break;
+            case CLOSE:
+                --closeMsgRecvNeeded;
+                Debug.printf(DebugLevel.LEVEL_HIGHEST, Debug.Color.GREEN, "Received CLOSE from %s, need %d more ", msg.getSenderId(), closeMsgRecvNeeded);
+                break;
             default:
                 break;
         }
@@ -96,8 +97,8 @@ public class CommunicationThread implements Runnable {
     public void run() {
         Message msg;
 
-        while (!commCommon.shouldClose()) {
-            poller.poll();
+        while (!commCommon.getCanClose() || closeMsgRecvNeeded > 0) {
+            poller.poll(1000);
             if (poller.pollin(0)) {
                 msg = commCommon.bytesToMessage(poller.getSocket(0).recv(ZMQ.DONTWAIT));
                 Debug.printf(DebugLevel.LEVEL_MORE, Debug.Color.BLUE, "Received from: %s, message type: %s\n",

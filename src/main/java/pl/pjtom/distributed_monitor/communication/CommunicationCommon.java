@@ -22,6 +22,7 @@ public class CommunicationCommon {
     private HashMap<String, OtherNode> otherNodes = new HashMap<>();
     private MyNode myNode;
     private CondVar initialCondVar = new CondVar();
+    private boolean canClose = false;
 
 
     CommunicationCommon(MonitorCommon monCom) {
@@ -115,11 +116,6 @@ public class CommunicationCommon {
         return otherNodes.values();
     }
 
-    public boolean shouldClose() { // TODO: Sync
-        // TODO: 
-        return false;
-    }
-
     public byte[] messageToBytes(Message msg) {
         return fstConf.asByteArray(msg);
     }
@@ -140,4 +136,15 @@ public class CommunicationCommon {
         myNode.getBroadcastSendSocket().send(messageToBytes(msg));
     }
 
+    public void cleanup() {
+        context.destroy();
+    }
+
+    public void setCanClose(boolean canClose) {
+        this.canClose = canClose;
+    }
+
+    public boolean getCanClose() {
+        return canClose;
+    }
 }

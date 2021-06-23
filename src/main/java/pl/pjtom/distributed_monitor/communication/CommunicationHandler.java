@@ -22,7 +22,14 @@ public class CommunicationHandler {
     }
 
     public void close() {
-
+        commCommon.setCanClose(true);
+        broadcast(MessageType.CLOSE, null);
+        try {
+            communicationThread.join();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        commCommon.cleanup();
     }
 
     private void runCommunicationThread() {
