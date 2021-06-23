@@ -18,7 +18,6 @@ public class CommunicationHandler {
         commCommon = new CommunicationCommon(monCommon);
         this.monCommon = monCommon;
         runCommunicationThread();
-        initNodeSync();
     }
 
     public void close() {
@@ -37,7 +36,7 @@ public class CommunicationHandler {
         communicationThread.start();
     }
 
-    private void initNodeSync() {
+    public void initNodeSync() {
         CondVar condVar = commCommon.getInitialCondVar();
         condVar.lock();
         condVar.setTargetVal(commCommon.getOhterNodesCount());

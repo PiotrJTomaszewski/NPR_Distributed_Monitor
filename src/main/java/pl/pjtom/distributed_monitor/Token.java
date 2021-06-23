@@ -11,6 +11,7 @@ import pl.pjtom.distributed_monitor.node.OtherNode;
 public class Token implements Serializable {
     private HashMap<String, Integer> lastRequestNumber = new HashMap<>();
     private Deque<String> queue = new ArrayDeque<>();
+    private Serializable sharedObject = null;
 
     public Token(MyNode myNode, HashMap<String, OtherNode> otherNodes) {
         lastRequestNumber.put(myNode.getIdentifier(), 0);
@@ -46,6 +47,14 @@ public class Token implements Serializable {
             return queue.pop();
         }
         return null;
+    }
+
+    public void setSharedObject(Serializable sharedObject) {
+        this.sharedObject = sharedObject;
+    }
+
+    public Serializable getSharedObject() {
+        return sharedObject;
     }
 
     public void debugPrintQueue() {

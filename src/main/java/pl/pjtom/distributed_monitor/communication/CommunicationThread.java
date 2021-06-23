@@ -57,7 +57,7 @@ public class CommunicationThread implements Runnable {
                 condVar.lock();
                 monCommon.updateRequestNumber(msg.getSenderId(), (Integer)msg.getPayload());
                 Debug.printf(DebugLevel.LEVEL_HIGHEST, Debug.Color.GREEN, "Received CS_REQUEST from %s RNi: %d", msg.getSenderId(), (Integer)msg.getPayload());
-                if (monCommon.getHasToken() && monCommon.getMonitorState() != MonitorState.IN_CS) {
+                if (monCommon.getHasToken() && monCommon.getMonitorState() != MonitorState.IN_CS && monCommon.getMonitorState() != MonitorState.WAITING_FOR_CS) {
                     if (monCommon.checkRequestNumberWithToken(msg.getSenderId())) {
                         Debug.printf(DebugLevel.LEVEL_HIGHEST, Debug.Color.GREEN, "Received CS_REQUEST from %s I have a token and don't need it so sending to him", msg.getSenderId());
                         commCommon.send(new Message(MessageType.TOKEN, commCommon.getMyIdentifier(), monCommon.getToken()), msg.getSenderId());
@@ -88,11 +88,6 @@ public class CommunicationThread implements Runnable {
                 condVar.setCurrentVal(1);
                 condVar.signalIfReady();
                 condVar.unlock();
-                break;
-            case OBJECT_SYNC:
-                monCommon.getCSCondVar().lock();
-                monCommon.setSharedObject(msg.getPayload());
-                monCommon.getCSCondVar().unlock();
                 break;
             case CLOSE:
                 --closeMsgRecvNeeded;

@@ -17,8 +17,6 @@ public class ProducerConsumer {
     private final int ITEM_OUT = 1;
     private Random rand = new Random();
     private FileWriter writer;
-    private int _lastVal1 = -1;
-    private int _lastVal2 = -1;
     private volatile Buffer buf;
 
     private void initWriter(String filename) {
@@ -33,6 +31,7 @@ public class ProducerConsumer {
 
     public class Producer {
         public Producer(DistributedMonitor distMon) {
+            distMon.signalWaitReady();
             for (int i = 0; i < 100; i++) {
                 // Do some work
                 try {
@@ -58,7 +57,7 @@ public class ProducerConsumer {
                         writer.write("Put " + String.valueOf(i) + "\n");
                     } catch (IOException e) {System.out.print(e.getStackTrace()); System.exit(-1);}
                 }
-                distMon.distSync(buf);
+                distMon.setSharedObject(buf);
                 distMon.distNotifyAll(ITEM_IN);
                 distMon.distRelease();
             }
@@ -68,6 +67,7 @@ public class ProducerConsumer {
     public class Consumer {
         public Consumer(DistributedMonitor distMon) {
             int val;
+            distMon.signalWaitReady();
             for (int i = 0; i < 100; i++) {
                 distMon.distAcquire();
                 buf = (Buffer) distMon.getSharedObject();
@@ -76,10 +76,7 @@ public class ProducerConsumer {
                     buf = (Buffer) distMon.getSharedObject();
                 }
                 val = buf.get();
-                if ((val < 1000 && val <= _lastVal1) || (val >= 1000 && val <= _lastVal2)) {
-                    _lastVal1 = 2;
-                }
-                distMon.distSync(buf);
+                distMon.setSharedObject(buf);
                 distMon.distNotifyAll(ITEM_OUT);
                 distMon.distRelease();
                 System.out.println(val);
@@ -91,19 +88,16 @@ public class ProducerConsumer {
                     Thread.sleep(rand.nextInt(300) + 100);
                 } catch (InterruptedException e) {
                 }
-                if (val < 1000) {
-                    _lastVal1 = val;
-                } else {
-                    _lastVal2 = val;
-                }
             }
         }
     }
 
     public ProducerConsumer() {
-        buf = new Buffer(10);
-        DistributedMonitor distMon = new DistributedMonitor(buf, COND_VAR_COUNT);
+        DistributedMonitor distMon = new DistributedMonitor(COND_VAR_COUNT);
         initWriter(distMon.getMyIdentifier());
+        if (distMon.hasToken()) {
+            distMon.setSharedObject(new Buffer(10));
+        }
         switch (distMon.getMyIdentifier()) {
             case "Jeden":
             case "Trzy":

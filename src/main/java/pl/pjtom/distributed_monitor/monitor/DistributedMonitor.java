@@ -1,6 +1,7 @@
 package pl.pjtom.distributed_monitor.monitor;
 
 import java.io.Serializable;
+import java.util.NoSuchElementException;
 
 import pl.pjtom.distributed_monitor.CondVar;
 import pl.pjtom.distributed_monitor.Debug;
@@ -13,9 +14,9 @@ public class DistributedMonitor {
     private CommunicationHandler comHandler;
     private MonitorCommon monCom;
 
-    public DistributedMonitor(Serializable sharedObject, int condVarCount) {
+    public DistributedMonitor(int condVarCount) {
         Debug.init();
-        monCom = new MonitorCommon(sharedObject, condVarCount);
+        monCom = new MonitorCommon(condVarCount);
         comHandler = new CommunicationHandler(monCom);
     }
 
@@ -95,36 +96,38 @@ public class DistributedMonitor {
         monCom.getCSCondVar().unlock();
     }
 
-    public void distSync() {
-        Debug.printf(DebugLevel.LEVEL_BASIC, Debug.Color.GREEN, "Shared object synchro");
-        comHandler.broadcast(MessageType.OBJECT_SYNC, monCom.getSharedObject());
-    }
-
-    public void distSync(Serializable sharedObject) {
-        monCom.setSharedObject(sharedObject);
-        distSync();
-    }
-
     public String getMyIdentifier() {
         return comHandler.getMyIdentifier();
     }
 
     public void setSharedObject(Serializable sharedObject) {
-        monCom.setSharedObject(sharedObject);
+        if (monCom.getHasToken())
+            monCom.getToken().setSharedObject(sharedObject);
+        else throw new NoSuchElementException();
     }
 
     public Serializable getSharedObject() {
-        return monCom.getSharedObject();
+        if (monCom.getHasToken())
+            return monCom.getToken().getSharedObject();
+        else throw new NoSuchElementException();
+    }
+
+    public boolean hasToken() {
+        return monCom.getHasToken();
     }
 
     public void close() {
         monCom.setMonitorState(MonitorState.FINISHED);
-        Debug.printf(DebugLevel.NO_DEBUG, Debug.Color.GREEN, "Closing");
+        Debug.printf(DebugLevel.LEVEL_BASIC, Debug.Color.GREEN, "Closing");
         comHandler.close();
     }
 
     private CondVar.CondVarTimeoutCallback CSWaitTimeoutCallback = () -> {
         comHandler.broadcast(MessageType.CS_REQUEST, monCom.incrementMyRequestNumber());
     };
+
+    public void signalWaitReady() {
+        comHandler.initNodeSync();
+    }
 
 }

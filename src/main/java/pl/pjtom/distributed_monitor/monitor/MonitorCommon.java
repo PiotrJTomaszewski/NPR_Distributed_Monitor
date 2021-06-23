@@ -15,7 +15,6 @@ public class MonitorCommon {
     }
 
     private volatile MonitorState monitorState = MonitorState.OTHER_STUFF;
-    private volatile Serializable sharedObject;
     private final int distCondVarCount;
     private CondVar[] distCondVars;
     private CondVar csCondVar = new CondVar(1);
@@ -24,8 +23,7 @@ public class MonitorCommon {
     private boolean hasToken = false;
     private Token token;
 
-    public MonitorCommon(Serializable sharedObject, int condVarCount) {
-        this.sharedObject = sharedObject;
+    public MonitorCommon(int condVarCount) {
         this.distCondVarCount = condVarCount;
         this.distCondVars = new CondVar[condVarCount];
         for (int i=0; i<condVarCount; i++) {
@@ -51,14 +49,6 @@ public class MonitorCommon {
 
     public MonitorState getMonitorState() {
         return monitorState;
-    }
-
-    public void setSharedObject(Serializable sharedObject) {
-        this.sharedObject = sharedObject;
-    }
-
-    public Serializable getSharedObject() {
-        return sharedObject;
     }
 
     public int getDistCondVarCount() {
