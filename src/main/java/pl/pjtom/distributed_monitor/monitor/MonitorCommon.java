@@ -1,6 +1,5 @@
 package pl.pjtom.distributed_monitor.monitor;
 
-import java.io.Serializable;
 import java.util.HashMap;
 
 import pl.pjtom.distributed_monitor.CondVar;

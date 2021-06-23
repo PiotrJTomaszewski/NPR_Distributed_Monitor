@@ -2,8 +2,6 @@ package pl.pjtom.distributed_monitor.communication;
 
 import java.util.HashMap;
 
-import javax.print.attribute.standard.MediaSize.Other;
-
 import org.zeromq.ZMQ;
 
 import pl.pjtom.distributed_monitor.CondVar;

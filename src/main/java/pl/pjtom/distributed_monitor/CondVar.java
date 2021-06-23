@@ -1,10 +1,7 @@
 package pl.pjtom.distributed_monitor;
 
-import java.util.concurrent.Callable;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
-
-import pl.pjtom.distributed_monitor.Debug.DebugLevel;
 
 public class CondVar {
     private ReentrantLock lock = new ReentrantLock();
