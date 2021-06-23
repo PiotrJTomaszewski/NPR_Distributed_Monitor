@@ -33,7 +33,7 @@ public class Token implements Serializable {
             if (!queue.contains(identifier)) {
                 RNi = requestNumber.get(identifier);
                 LNi = lastRequestNumber.get(identifier);
-                if (RNi == LNi + 1) {
+                if (RNi >= LNi + 1) {
                     queue.add(identifier);
                 }
             }

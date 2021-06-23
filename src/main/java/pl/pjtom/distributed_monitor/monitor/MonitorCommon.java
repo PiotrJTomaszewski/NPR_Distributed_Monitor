@@ -2,8 +2,6 @@ package pl.pjtom.distributed_monitor.monitor;
 
 import java.io.Serializable;
 import java.util.HashMap;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 
 import pl.pjtom.distributed_monitor.CondVar;
 import pl.pjtom.distributed_monitor.Debug;
@@ -13,7 +11,7 @@ import pl.pjtom.distributed_monitor.node.OtherNode;
 
 public class MonitorCommon {
     public enum MonitorState {
-        OTHER_STUFF, WAITING_FOR_CS, IN_CS, AWAITING
+        OTHER_STUFF, WAITING_FOR_CS, IN_CS, AWAITING, FINISHED
     }
 
     private volatile MonitorState monitorState = MonitorState.OTHER_STUFF;
@@ -25,7 +23,6 @@ public class MonitorCommon {
     private HashMap<String, Integer> requestNumber = new HashMap<>();
     private boolean hasToken = false;
     private Token token;
-    private Lock lock = new ReentrantLock();
 
     public MonitorCommon(Serializable sharedObject, int condVarCount) {
         this.sharedObject = sharedObject;
@@ -76,6 +73,10 @@ public class MonitorCommon {
         return csCondVar;
     }
 
+    public Integer getMyRequestNumber() {
+        return requestNumber.get(myIdentifier);
+    }
+
     public Integer incrementMyRequestNumber() {
         Integer currentVal = requestNumber.get(myIdentifier);
         requestNumber.replace(myIdentifier, currentVal+1);
@@ -95,7 +96,7 @@ public class MonitorCommon {
     }
 
     public boolean checkRequestNumberWithToken(String identifier) {
-        return requestNumber.get(identifier) == (token.getLastRequestNumber(identifier) + 1);
+        return requestNumber.get(identifier) >= (token.getLastRequestNumber(identifier) + 1);
     }
 
     public void updateTokenQueue() {
@@ -134,10 +135,6 @@ public class MonitorCommon {
                 Debug.printf(Debug.DebugLevel.LEVEL_HIGHEST, Debug.Color.YELLOW, "%s -> RNi: %d", identifier, requestNumber.get(identifier));
             }
         }
-    }
-
-    public Lock getLock() {
-        return lock;
     }
 
 }

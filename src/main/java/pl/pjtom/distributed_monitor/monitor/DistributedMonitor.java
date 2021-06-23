@@ -17,7 +17,6 @@ public class DistributedMonitor {
         Debug.init();
         monCom = new MonitorCommon(sharedObject, condVarCount);
         comHandler = new CommunicationHandler(monCom);
-
     }
 
     public void distWait(int condVarId) {
@@ -63,12 +62,10 @@ public class DistributedMonitor {
             Debug.printf(DebugLevel.LEVEL_BASIC, Debug.Color.GREEN, "ACQUIRE: Requesting critical section");
             monCom.setMonitorState(MonitorState.WAITING_FOR_CS);
             csCondVar.setIsWaiting(true);
-            monCom.getLock().lock();
             newSequenceNumber = monCom.incrementMyRequestNumber();
-            monCom.getLock().unlock();
             comHandler.broadcast(MessageType.CS_REQUEST, newSequenceNumber);
             Debug.printf(DebugLevel.LEVEL_BASIC, Debug.Color.GREEN, "ACQUIRE: Waiting for critical section");
-            csCondVar.await();
+            csCondVar.awaitWithCallbackOnTimeout(5000L, CSWaitTimeoutCallback);
             monCom.setMonitorState(MonitorState.IN_CS);
             Debug.printf(DebugLevel.LEVEL_BASIC, Debug.Color.GREEN, "ACQUIRE: I'm in a critical section");
         } else {
@@ -82,7 +79,6 @@ public class DistributedMonitor {
         monCom.getCSCondVar().lock();
         Debug.printf(DebugLevel.LEVEL_BASIC, Debug.Color.GREEN, "Leaving critical section");
         monCom.setMonitorState(MonitorState.OTHER_STUFF);
-        monCom.getLock().lock();
         monCom.updateMyRequestNumberInToken();
         monCom.updateTokenQueue();
         String recipientId = monCom.tokenQueuePop();
@@ -91,11 +87,11 @@ public class DistributedMonitor {
         } 
         if (recipientId != null) {
             monCom.setHasToken(false);
+            Debug.printf(DebugLevel.LEVEL_BASIC, Debug.Color.GREEN, "Sending token to %s", recipientId);
             comHandler.send(MessageType.TOKEN, monCom.getToken(), recipientId);
         } else {
             Debug.printf(DebugLevel.LEVEL_BASIC, Debug.Color.GREEN, "Noone wants the token");
         }
-        monCom.getLock().unlock();
         monCom.getCSCondVar().unlock();
     }
 
@@ -122,8 +118,13 @@ public class DistributedMonitor {
     }
 
     public void close() {
+        monCom.setMonitorState(MonitorState.FINISHED);
         Debug.printf(DebugLevel.NO_DEBUG, Debug.Color.GREEN, "Closing");
         comHandler.close();
     }
+
+    private CondVar.CondVarTimeoutCallback CSWaitTimeoutCallback = () -> {
+        comHandler.broadcast(MessageType.CS_REQUEST, monCom.incrementMyRequestNumber());
+    };
 
 }

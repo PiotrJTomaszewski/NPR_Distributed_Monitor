@@ -38,6 +38,20 @@ public class CondVar {
         currentVal = 0;
     }
 
+    public void awaitWithCallbackOnTimeout(long timeoutMillis, CondVarTimeoutCallback callback) {
+        isWaiting = true;
+        while (currentVal < targetVal) {
+            try {
+                cond.awaitNanos(timeoutMillis * 1000000);
+            } catch (InterruptedException e) {}
+            if (currentVal < targetVal) {
+                callback.call();
+            }
+        }
+        isWaiting = false;
+        currentVal = 0;
+    }
+
     public void setTargetVal(int targetVal) {
         this.targetVal = targetVal;
     }
@@ -72,4 +86,7 @@ public class CondVar {
         this.isWaiting = isWaiting;
     }
 
+    public interface CondVarTimeoutCallback {
+        public void call();
+    }
 }

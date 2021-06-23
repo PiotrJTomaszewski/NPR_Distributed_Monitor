@@ -12,7 +12,6 @@ import pl.pjtom.distributed_monitor.monitor.DistributedMonitor;
  * producenta-konsumenta zrealizowany za pomocą współdzielonego bufora.
  */
 public class ProducerConsumer {
-    private final boolean SIMULATE_WORK = false;
     private final int COND_VAR_COUNT = 2;
     private final int ITEM_IN = 0;
     private final int ITEM_OUT = 1;
@@ -33,12 +32,10 @@ public class ProducerConsumer {
         public Producer(DistributedMonitor distMon) {
             Buffer buf;
             for (int i = 0; i < 100; i++) {
-                if (SIMULATE_WORK) {
-                    // Do some work
-                    try {
-                        Thread.sleep(rand.nextInt(300) + 100);
-                    } catch (InterruptedException e) {
-                    }
+                // Do some work
+                try {
+                    Thread.sleep(rand.nextInt(300) + 100);
+                } catch (InterruptedException e) {
                 }
                 distMon.distAcquire();
                 buf = (Buffer) distMon.getSharedObject();
@@ -78,12 +75,10 @@ public class ProducerConsumer {
                 try {
                     writer.write(String.valueOf(val) + "\n");
                 } catch (IOException e) {System.out.print(e.getStackTrace()); System.exit(-1);}
-                if (SIMULATE_WORK) {
-                    // Do some work
-                    try {
-                        Thread.sleep(rand.nextInt(300) + 100);
-                    } catch (InterruptedException e) {
-                    }
+                // Do some work
+                try {
+                    Thread.sleep(rand.nextInt(300) + 100);
+                } catch (InterruptedException e) {
                 }
             }
         }
